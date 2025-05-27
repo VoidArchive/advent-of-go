@@ -38,13 +38,11 @@ func sumConditionalValidMul(input string) int {
 		case "don't()":
 			enabled = false
 		default:
-			if !enabled {
-				continue
+			if enabled {
+				x, _ := strconv.Atoi(match[1])
+				y, _ := strconv.Atoi(match[2])
+				sum += x * y
 			}
-			x, _ := strconv.Atoi(match[1])
-			y, _ := strconv.Atoi(match[2])
-
-			sum += x * y
 
 		}
 	}
