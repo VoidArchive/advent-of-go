@@ -92,7 +92,7 @@ func simulateGuardPath(grid [][]byte, sx, sy, dir int) int {
 func causesLoop(grid [][]byte, sx, sy, dir int) bool {
 	seen := make(map[State]bool)
 	x, y := sx, sy
-	const maxSteps = 10000 // Limit to prevent infinite loops
+	maxSteps := len(grid) * len(grid[0]) * 4 // Limit to prevent infinite loops
 	steps := 0
 
 	for {
