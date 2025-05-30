@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"runtime"
+	"sync"
 )
 
 type State struct {
@@ -90,8 +92,14 @@ func simulateGuardPath(grid [][]byte, sx, sy, dir int) int {
 func causesLoop(grid [][]byte, sx, sy, dir int) bool {
 	seen := make(map[State]bool)
 	x, y := sx, sy
+	const maxSteps = 10000 // Limit to prevent infinite loops
+	steps := 0
 
 	for {
+		if steps >= maxSteps {
+			return true
+		}
+		steps++
 		state := State{x, y, dir}
 		if seen[state] {
 			return true
@@ -114,22 +122,40 @@ func causesLoop(grid [][]byte, sx, sy, dir int) bool {
 }
 
 func countLoopObstacles(lines []string, sx, sy, dir int) int {
+	grid := copyGrid(lines)
+	var wg sync.WaitGroup
+	var mu sync.Mutex
 	count := 0
 
-	for i, row := range lines {
+	maxWorkers := runtime.NumCPU()
+	sem := make(chan struct{}, maxWorkers)
+
+	for i, row := range grid {
 		for j := range row {
 			if row[j] != '.' || (i == sx && j == sy) {
 				continue
 			}
 
-			grid := copyGrid(lines)
-			grid[i][j] = '#'
+			sem <- struct{}{}
+			wg.Add(1)
 
-			if causesLoop(grid, sx, sy, dir) {
-				count++
-			}
+			go func(i, j int) {
+				defer func() {
+					<-sem
+					wg.Done()
+				}()
+				gridCopy := copyGrid(lines)
+				gridCopy[i][j] = '#'
+
+				if causesLoop(gridCopy, sx, sy, dir) {
+					mu.Lock()
+					count++
+					mu.Unlock()
+				}
+			}(i, j)
 		}
 	}
+	wg.Wait()
 	return count
 }
 
