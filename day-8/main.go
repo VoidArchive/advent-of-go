@@ -169,7 +169,7 @@ func main() {
 	grid := readLines("input.txt")
 	antinodes := findAntinodes(grid)
 	harmonicAntinodes := findHarmonicAntinodes(grid)
-	printDebugGrid(grid, antinodes)
+	printDebugGrid(grid, harmonicAntinodes)
 	fmt.Printf("Number of antinodes: %d\n", len(antinodes))
 	fmt.Printf("Number of harmonic antinodes: %d\n", len(harmonicAntinodes))
 }
