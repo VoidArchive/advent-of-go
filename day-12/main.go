@@ -28,16 +28,19 @@ func readInput(filePath string) ([][]rune, error) {
 	return gardenMap, nil
 }
 
-func bfs(gardenMap [][]rune, visited [][]bool, startR, startC int, plantType rune, numRows, numCols int) (area, perimeter int) {
+func bfs(gardenMap [][]rune, visited [][]bool, startR, startC int, plantType rune, numRows, numCols int) (regionPoints []Point, area, perimeter int) {
 	dr := []int{-1, 1, 0, 0}
 	dc := []int{0, 0, -1, 1}
 
 	queue := []Point{{startR, startC}}
+	visited[startR][startC] = true
+	var collectedPoints []Point
 
 	for len(queue) > 0 {
 		currPoint := queue[0]
 		queue = queue[1:]
 		area++
+		collectedPoints = append(collectedPoints, currPoint)
 
 		for i := range 4 {
 			nextR, nextC := currPoint.R+dr[i], currPoint.C+dc[i]
@@ -51,7 +54,7 @@ func bfs(gardenMap [][]rune, visited [][]bool, startR, startC int, plantType run
 			}
 		}
 	}
-	return area, perimeter
+	return collectedPoints, area, perimeter
 }
 
 func solvePart1(gardenMap [][]rune) int {
@@ -76,7 +79,7 @@ func solvePart1(gardenMap [][]rune) int {
 				visited[r][c] = true
 
 				// INFO: Calling BFS
-				area, perimeter := bfs(gardenMap, visited, r, c, currentPlantType, numRows, numCols)
+				_, area, perimeter := bfs(gardenMap, visited, r, c, currentPlantType, numRows, numCols)
 
 				regionPrice := area * perimeter
 				totalFencePrice += regionPrice
@@ -94,4 +97,7 @@ func main() {
 	}
 	resultPart1 := solvePart1(gardenMap)
 	fmt.Println(resultPart1)
+
+	resultPart2 := solvePart2(gardenMap)
+	fmt.Println(resultPart2)
 }
