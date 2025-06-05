@@ -117,7 +117,7 @@ func readInput(input string) []*big.Int {
 func main() {
 	initGlobal()
 	stones := readInput("input.txt")
-	numberOfBlinks := 75
+	numberOfBlinks := 200
 	totalStonesCount := big.NewInt(0)
 
 	for i, stone := range stones {
