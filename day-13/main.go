@@ -1,8 +1,13 @@
 package main
 
 import (
+	"bufio"
 	"errors"
 	"fmt"
+	"os"
+	"regexp"
+	"strconv"
+	"strings"
 )
 
 type Point struct {
@@ -37,9 +42,11 @@ func solveLinearSystem(buttonA, buttonB, Prize Point) (int, error) {
 	}
 
 	a := finalC / finalA
-	if a < 0 || a > 100 {
-		return 0, fmt.Errorf("a is out of bound: %d", a)
-	}
+
+	// INFO: PART 1: constraint
+	// if a < 0 || a > 100 {
+	// 	return 0, fmt.Errorf("a is out of bound: %d", a)
+	// }
 
 	numerator := c1 - a1*a
 	if numerator%b1 != 0 {
@@ -47,8 +54,14 @@ func solveLinearSystem(buttonA, buttonB, Prize Point) (int, error) {
 	}
 
 	b := numerator / b1
-	if b < 0 || b > 100 {
-		return 0, fmt.Errorf("b is out of bound %d", b)
+
+	// INFO: PART1: constraint
+	// if b < 0 || b > 100 {
+	// 	return 0, fmt.Errorf("b is out of bound %d", b)
+	// }
+
+	if a < 0 || b < 0 {
+		return 0, fmt.Errorf("negative presses not allowed")
 	}
 
 	cost := a*3 + b
@@ -56,7 +69,7 @@ func solveLinearSystem(buttonA, buttonB, Prize Point) (int, error) {
 	return cost, nil
 }
 
-func solvePart1(machines []Machine) int {
+func solve(machines []Machine) int {
 	totalCost := 0
 	for _, machine := range machines {
 		cost, err := solveLinearSystem(machine.buttonA, machine.buttonB, machine.Prize)
@@ -69,12 +82,52 @@ func solvePart1(machines []Machine) int {
 	return totalCost
 }
 
-func main() {
-	machines := []Machine{
-		{Point{94, 34}, Point{22, 67}, Point{8400, 5400}},   // Should give 280
-		{Point{17, 86}, Point{84, 37}, Point{7870, 6450}},   // Should give 200
-		{Point{26, 66}, Point{67, 21}, Point{12748, 12176}}, // Should fail
+func parseInputFile(filename string) ([]Machine, error) {
+	file, err := os.Open(filename)
+	if err != nil {
+		return nil, err
 	}
-	result := solvePart1(machines)
+	defer file.Close()
+
+	scanner := bufio.NewScanner(file)
+	var machines []Machine
+
+	buttonRegex := regexp.MustCompile(`Button [AB]: X\+(\d+), Y\+(\d+)`)
+	prizeRegex := regexp.MustCompile(`Prize: X=(\d+), Y=(\d+)`)
+
+	var ax, ay, bx, by int
+
+	// INFO: Part2: Offset
+	offset := 10000000000000
+
+	for scanner.Scan() {
+		line := scanner.Text()
+
+		if matches := buttonRegex.FindStringSubmatch(line); matches != nil {
+			x, _ := strconv.Atoi(matches[1])
+			y, _ := strconv.Atoi(matches[2])
+
+			if strings.Contains(line, "Button A") {
+				ax, ay = x, y
+			} else {
+				bx, by = x, y
+			}
+		} else if matches := prizeRegex.FindStringSubmatch(line); matches != nil {
+			px, _ := strconv.Atoi(matches[1])
+			py, _ := strconv.Atoi(matches[2])
+
+			machines = append(machines, Machine{
+				Point{ax, ay},
+				Point{bx, by},
+				Point{px + offset, py + offset},
+			})
+		}
+	}
+	return machines, scanner.Err()
+}
+
+func main() {
+	machines, _ := parseInputFile("input.txt")
+	result := solve(machines)
 	fmt.Println(result)
 }
