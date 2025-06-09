@@ -24,7 +24,6 @@ func readandParseInput(input string) ([][]int, int, int, error) {
 		return nil, 0, 0, err
 	}
 	defer file.Close()
-
 	scanner := bufio.NewScanner(file)
 	lines := []string{}
 	for scanner.Scan() {
@@ -38,7 +37,6 @@ func readandParseInput(input string) ([][]int, int, int, error) {
 	}
 	rows := len(lines)
 	cols := len(lines[0])
-
 	parsedGrid := make([][]int, rows)
 	for row := range rows {
 		if len(lines[row]) != cols {
@@ -63,10 +61,8 @@ func dfsFindNines(r, c, currentHeight int, ninesFound map[Point]bool, ctx *Searc
 	}
 	dr := []int{-1, 1, 0, 0}
 	dc := []int{0, 0, -1, 1}
-
 	for i := range 4 {
 		nr, nc := r+dr[i], c+dc[i]
-
 		if nr >= 0 && nr < ctx.Rows && nc >= 0 && nc < ctx.Cols {
 			if ctx.Grid[nr][nc] == currentHeight+1 {
 				dfsFindNines(nr, nc, currentHeight+1, ninesFound, ctx)
@@ -85,7 +81,6 @@ func dfsCountTrailsPart2(r, c, currentHeight int, ctx *SearchContext, memo [][][
 	numberOfTrails := 0
 	dr := []int{-1, 1, 0, 0}
 	dc := []int{0, 0, -1, 1}
-
 	for i := range 4 {
 		nr, nc := r+dr[i], c+dc[i]
 		if nr >= 0 && nr < ctx.Rows && nc >= 0 && nc < ctx.Cols && ctx.Grid[nr][nc] == currentHeight+1 {
@@ -96,79 +91,53 @@ func dfsCountTrailsPart2(r, c, currentHeight int, ctx *SearchContext, memo [][][
 	return numberOfTrails
 }
 
-func solvePart1(trailheads []Point, ctx *SearchContext) (int, []int) {
-	totalScore := 0
-	individualScores := make([]int, 0, len(trailheads))
-
-	for _, th := range trailheads {
-		reachableNines := make(map[Point]bool)
-		dfsFindNines(th.R, th.C, 0, reachableNines, ctx)
-		score := len(reachableNines)
-		totalScore += score
-		individualScores = append(individualScores, score)
-	}
-	return totalScore, individualScores
-}
-
-func solvePart2(trailheads []Point, ctx *SearchContext) (int, []int) {
-	totalRaiting := 0
-	individualRatings := make([]int, 0, len(trailheads))
-
-	for _, th := range trailheads {
-		memo := make([][][]int, ctx.Rows)
-		for rMemo := range ctx.Rows {
-			memo[rMemo] = make([][]int, ctx.Cols)
-			for cMemo := range ctx.Cols {
-				memo[rMemo][cMemo] = make([]int, 10)
-				for hMemo := range 10 {
-					memo[rMemo][cMemo][hMemo] = -1
-				}
-			}
-		}
-		raiting := dfsCountTrailsPart2(th.R, th.C, 0, ctx, memo)
-		totalRaiting += raiting
-		individualRatings = append(individualRatings, raiting)
-	}
-	return totalRaiting, individualRatings
-}
-
-func runAndPrintSolutions(grid [][]int, rows int, cols int) {
-	fmt.Println("Parsed Grid (" + strconv.Itoa(rows) + "x" + strconv.Itoa(cols) + ") - first few lines if large:")
-	for r := 0; r < rows && r < 5; r++ {
-		fmt.Println(grid[r])
-	}
-	if rows > 5 {
-		fmt.Println("...")
-	}
-
+func findTrailheads(grid [][]int, rows, cols int) []Point {
 	var trailheads []Point
 	for r := range rows {
 		for c := range cols {
 			if grid[r][c] == 0 {
-				trailheads = append(trailheads, Point{r, c})
+				trailheads = append(trailheads, Point{R: r, C: c})
+			}
+		}
+	}
+	return trailheads
+}
+
+func solvePart1(grid [][]int, rows, cols int) int {
+	ctx := &SearchContext{Grid: grid, Rows: rows, Cols: cols}
+	trailheads := findTrailheads(grid, rows, cols)
+
+	totalScore := 0
+	for _, trailhead := range trailheads {
+		ninesFound := make(map[Point]bool)
+		dfsFindNines(trailhead.R, trailhead.C, 0, ninesFound, ctx)
+		totalScore += len(ninesFound)
+	}
+	return totalScore
+}
+
+func solvePart2(grid [][]int, rows, cols int) int {
+	ctx := &SearchContext{Grid: grid, Rows: rows, Cols: cols}
+	trailheads := findTrailheads(grid, rows, cols)
+
+	// Initialize memoization table
+	memo := make([][][]int, rows)
+	for r := range rows {
+		memo[r] = make([][]int, cols)
+		for c := range cols {
+			memo[r][c] = make([]int, 10)
+			for h := range 10 {
+				memo[r][c][h] = -1
 			}
 		}
 	}
 
-	if len(trailheads) == 0 {
-		fmt.Println("No trailheads found.")
-		return
+	totalRating := 0
+	for _, trailhead := range trailheads {
+		rating := dfsCountTrailsPart2(trailhead.R, trailhead.C, 0, ctx, memo)
+		totalRating += rating
 	}
-	fmt.Printf("Found %d trailheads.\n", len(trailheads))
-
-	searchCtx := &SearchContext{Grid: grid, Rows: rows, Cols: cols}
-
-	// ---INFO: Solve Part 1 ---
-	totalScoreP1, individualScoresP1 := solvePart1(trailheads, searchCtx)
-	fmt.Println("\n--- Part One ---")
-	fmt.Println("Individual trailhead scores:", individualScoresP1)
-	fmt.Println("Sum of the scores of all trailheads (Part 1 Answer):", totalScoreP1)
-
-	// ---INFO: Solve Part 2 ---
-	totalRatingP2, individualRatingsP2 := solvePart2(trailheads, searchCtx)
-	fmt.Println("\n--- Part Two ---")
-	fmt.Println("Individual trailhead ratings:", individualRatingsP2)
-	fmt.Println("Sum of the ratings of all trailheads (Part 2 Answer):", totalRatingP2)
+	return totalRating
 }
 
 func main() {
@@ -177,5 +146,10 @@ func main() {
 		fmt.Println("Error reading input:", err)
 		os.Exit(1)
 	}
-	runAndPrintSolutions(grid, rows, cols)
+
+	totalScore := solvePart1(grid, rows, cols)
+	fmt.Printf("Total score for Part 1: %d\n", totalScore)
+
+	totalRating := solvePart2(grid, rows, cols)
+	fmt.Printf("Total rating for Part 2: %d\n", totalRating)
 }

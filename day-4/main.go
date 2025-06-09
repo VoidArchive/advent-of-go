@@ -1,45 +1,38 @@
 package main
 
-import (
-	"bufio"
-	"fmt"
-	"log"
-	"os"
-)
-
 func main() {
-	grid, err := readGrid("input.txt")
+	grid, err := readgrid("input.txt")
 	if err != nil {
-		log.Fatal("reading grid: ", err)
+		log.fatal("reading grid: ", err)
 	}
 
-	fmt.Println("Part 1:", countXMAS(grid))
-	fmt.Println("Part 2:", countXMASX(grid))
+	fmt.println("part 1:", countxmas(grid))
+	fmt.println("part 2:", countxmasx(grid))
 }
 
-func readGrid(path string) ([]string, error) {
-	file, err := os.Open(path)
+func readgrid(path string) ([]string, error) {
+	file, err := os.open(path)
 	if err != nil {
 		return nil, err
 	}
-	defer file.Close()
+	defer file.close()
 
 	grid := make([]string, 0)
-	scanner := bufio.NewScanner(file)
+	scanner := bufio.newscanner(file)
 
-	for scanner.Scan() {
-		line := scanner.Text()
+	for scanner.scan() {
+		line := scanner.text()
 		grid = append(grid, line)
 	}
 
-	return grid, scanner.Err()
+	return grid, scanner.err()
 }
 
 func inbounds(x, y, rows, cols int) bool {
 	return x >= 0 && x < rows && y >= 0 && y < cols
 }
 
-func countXMAS(g []string) int {
+func countxmas(g []string) int {
 	dirs := [][2]int{
 		{-1, -1},
 		{-1, 0},
@@ -51,12 +44,12 @@ func countXMAS(g []string) int {
 		{1, 1},
 	}
 
-	target := "XMAS"
+	target := "xmas"
 	count := 0
 	rows, cols := len(g), len(g[0])
 	for r, row := range g {
 		for c, char := range row {
-			if char != 'X' {
+			if char != 'x' {
 				continue
 			}
 
@@ -80,21 +73,21 @@ func countXMAS(g []string) int {
 	return count
 }
 
-func countXMASX(g []string) int {
+func countxmasx(g []string) int {
 	rows, cols := len(g), len(g[0])
 	count := 0
 
 	for r := 1; r < rows-1; r++ {
 		for c := 1; c < cols-1; c++ {
-			if g[r][c] != 'A' {
+			if g[r][c] != 'a' {
 				continue
 			}
 
 			tl, tr := g[r-1][c-1], g[r-1][c+1]
 			bl, br := g[r+1][c-1], g[r+1][c+1]
 
-			diag1 := (tl == 'M' && br == 'S') || (tl == 'S' && br == 'M')
-			diag2 := (tr == 'M' && bl == 'S') || (tr == 'S' && bl == 'M')
+			diag1 := (tl == 'm' && br == 's') || (tl == 's' && br == 'm')
+			diag2 := (tr == 'm' && bl == 's') || (tr == 's' && bl == 'm')
 
 			if diag1 && diag2 {
 				count++
