@@ -4,179 +4,187 @@ import (
 	"bufio"
 	"container/heap"
 	"fmt"
+	"log"
 	"os"
 )
 
-type Point struct {
+const (
+	North = 0
+	East  = 1
+	South = 2
+	West  = 3
+)
+
+type State struct {
 	x, y int
 	dir  int
 }
 
-type State struct {
-	P    Point
-	cost int
+type QueueItem struct {
+	state State
+	cost  int
 }
 
-type pqueue []*State
+type PriorityQueue []*QueueItem
 
-func (pq pqueue) Len() int           { return len(pq) }
-func (pq pqueue) Less(i, j int) bool { return pq[i].cost < pq[j].cost }
-func (pq pqueue) Swap(i, j int) {
-	pq[i], pq[j] = pq[j], pq[i]
-}
-func (pq *pqueue) Push(x any) { *pq = append(*pq, x.(*State)) }
-func (pq *pqueue) Pop() any {
-	n := len(*pq)
-	it := (*pq)[n-1]
-	*pq = (*pq)[:n-1]
-	return it
-}
+func (pq PriorityQueue) Len() int           { return len(pq) }
+func (pq PriorityQueue) Less(i, j int) bool { return pq[i].cost < pq[j].cost }
+func (pq PriorityQueue) Swap(i, j int)      { pq[i], pq[j] = pq[j], pq[i] }
+func (pq *PriorityQueue) Push(x any)        { *pq = append(*pq, x.(*QueueItem)) }
+func (pq *PriorityQueue) Pop() any          { item := (*pq)[len(*pq)-1]; *pq = (*pq)[:len(*pq)-1]; return item }
+
+// Directions vectors: North, East, South, West
+var directions = [][2]int{{-1, 0}, {0, 1}, {1, 0}, {0, -1}}
 
 func main() {
-	grid, startPoint := parseGrid("input.txt")
-	fmt.Printf("Start Point: %v\n", startPoint)
+	grid, start := parseGrid("example-input.txt")
+	fmt.Printf("Start: (%d,%d) facing %s\n", start.x, start.y, directionName(start.dir))
 
-	// INFO: Part 1
-	_, cost := dijkstraForward(grid, startPoint)
-	fmt.Printf("Part 1 Solution: %d\n", cost)
+	// INFO: Part 1: Find minimum cost
+	_, minCost := dijkstraForward(grid, start)
+	fmt.Printf("Part 1: %d\n", minCost)
 
-	// INFO: Part 2
-	optimalTiles := solvePart2(grid, startPoint)
-	fmt.Printf("Part 2 Solution: %d\n", optimalTiles)
+	// INFO: Part 2: Count optimal path time
+	optimalTiles := countOptimalTiles(grid, start)
+	fmt.Printf("Part 2: %d\n", optimalTiles)
 }
 
-func parseGrid(input string) ([][]rune, Point) {
-	file, err := os.Open(input)
+func parseGrid(filename string) ([][]rune, State) {
+	file, err := os.Open(filename)
 	if err != nil {
-		fmt.Printf("error opening file: %v\n", err)
+		log.Fatalf("Error opening file: %v", err)
 	}
 	defer file.Close()
+
+	var grid [][]rune
+	var start State
 	scanner := bufio.NewScanner(file)
 
-	grid := [][]rune{}
-	var startPoint Point
-	rowIndex := 0
-
-	for scanner.Scan() {
+	for row := 0; scanner.Scan(); row++ {
 		line := scanner.Text()
 		grid = append(grid, []rune(line))
 
-		for colIndex, char := range line {
-			if char == 'S' {
-				startPoint = Point{rowIndex, colIndex, 1}
+		for col, cell := range line {
+			if cell == 'S' {
+				start = State{row, col, East}
 			}
 		}
-		rowIndex++
 	}
-	return grid, startPoint
+	if err := scanner.Err(); err != nil {
+		log.Fatalf("Error reading file: %v", err)
+	}
+	return grid, start
 }
 
-func dijkstraForward(grid [][]rune, start Point) (map[Point]int, int) {
-	pq := pqueue{}
-	heap.Push(&pq, &State{start, 0})
-	dist := make(map[Point]int)
-	dx := []int{-1, 0, 1, 0}
-	dy := []int{0, 1, 0, -1}
+func dijkstraForward(grid [][]rune, start State) (map[State]int, int) {
+	pq := &PriorityQueue{}
+	heap.Push(pq, &QueueItem{start, 0})
+	distances := make(map[State]int)
 
 	for pq.Len() > 0 {
-		it := heap.Pop(&pq).(*State)
-		cur, d := it.P, it.cost
+		current := heap.Pop(pq).(*QueueItem)
+		state, cost := current.state, current.cost
 
-		if cost, exists := dist[cur]; exists && d > cost {
+		if prevCost, exists := distances[state]; exists && cost > prevCost {
 			continue
 		}
-		dist[cur] = d
+		distances[state] = cost
 
-		if grid[cur.x][cur.y] == 'E' {
-			return dist, d
+		if grid[state.x][state.y] == 'E' {
+			return distances, cost
 		}
 
 		// Go Forward
-		newX := cur.x + dx[cur.dir]
-		newY := cur.y + dy[cur.dir]
-		if newX >= 0 && newX < len(grid) && newY >= 0 && newY < len(grid[0]) && grid[newX][newY] != '#' {
-			newPoint := Point{newX, newY, cur.dir}
-			if _, exists := dist[newPoint]; !exists {
-				heap.Push(&pq, &State{newPoint, d + 1})
+		dx, dy := directions[state.dir][0], directions[state.dir][1]
+		newX := state.x + dx
+		newY := state.y + dy
+
+		if isValid(grid, newX, newY) {
+			newState := State{newX, newY, state.dir}
+			if _, visited := distances[newState]; !visited {
+				heap.Push(pq, &QueueItem{newState, cost + 1})
 			}
 		}
 
-		// Turn Left
-		leftDir := (cur.dir + 3) % 4
-		newPoint := Point{cur.x, cur.y, leftDir}
-		heap.Push(&pq, &State{newPoint, d + 1000})
+		// Turn Left and Left
+		leftDir := (state.dir + 3) % 4
+		rightDir := (state.dir + 1) % 4
 
-		rightDir := (cur.dir + 1) % 4
-		newPoint = Point{cur.x, cur.y, rightDir}
-		heap.Push(&pq, &State{newPoint, d + 1000})
+		for _, newDir := range []int{leftDir, rightDir} {
+			newState := State{state.x, state.y, newDir}
+			if _, visited := distances[newState]; !visited {
+				heap.Push(pq, &QueueItem{newState, cost + 1000})
+			}
+		}
 	}
-	return dist, -1
+	return distances, -1
 }
 
-func dijkstraBackward(grid [][]rune, endX, endY int) map[Point]int {
-	pq := pqueue{}
-	dist := make(map[Point]int)
-	dx := []int{-1, 0, 1, 0}
-	dy := []int{0, 1, 0, -1}
+func dijkstraBackward(grid [][]rune, endX, endY int) map[State]int {
+	pq := &PriorityQueue{}
+	distances := make(map[State]int)
 
 	for dir := range 4 {
-		endState := Point{endX, endY, dir}
-		heap.Push(&pq, &State{endState, 0})
-		dist[endState] = 0
+		endState := State{endX, endY, dir}
+		heap.Push(pq, &QueueItem{endState, 0})
+		distances[endState] = 0
 	}
 
 	for pq.Len() > 0 {
-		it := heap.Pop(&pq).(*State)
-		cur, d := it.P, it.cost
+		current := heap.Pop(pq).(*QueueItem)
+		state, cost := current.state, current.cost
 
-		if cost, exists := dist[cur]; exists && d > cost {
+		if prevCost, exists := distances[state]; exists && cost > prevCost {
 			continue
 		}
 
 		// GO Backward
-		backDir := (cur.dir + 2) % 4
-		prevX := cur.x + dx[backDir]
-		prevY := cur.y + dy[backDir]
-		if prevX >= 0 && prevX < len(grid) && prevY >= 0 && prevY < len(grid[0]) && grid[prevX][prevY] != '#' {
-			prevState := Point{prevX, prevY, cur.dir}
-			if cost, exists := dist[prevState]; !exists || d+1 < cost {
-				dist[prevState] = d + 1
-				heap.Push(&pq, &State{prevState, d + 1})
+		backDir := (state.dir + 2) % 4
+		dx, dy := directions[backDir][0], directions[backDir][1]
+		prevX := state.x + dx
+		prevY := state.y + dy
+		if isValid(grid, prevX, prevY) {
+			prevState := State{prevX, prevY, state.dir}
+			newCost := cost + 1
+			if prevCost, exists := distances[prevState]; !exists || newCost < prevCost {
+				distances[prevState] = newCost
+				heap.Push(pq, &QueueItem{prevState, newCost})
 			}
 		}
 
-		// Turn Left Back
-		leftDir := (cur.dir + 3) % 4
-		prevState := Point{cur.x, cur.y, leftDir}
-		if cost, exists := dist[prevState]; !exists || d+1000 < cost {
-			dist[prevState] = d + 1000
-			heap.Push(&pq, &State{prevState, d + 1000})
+		// Reverse Turn left/right
+		leftDir := (state.dir + 3) % 4
+		rightDir := (state.dir + 1) % 4
+
+		for _, prevDir := range []int{leftDir, rightDir} {
+			prevState := State{state.x, state.y, prevDir}
+			newCost := cost + 1000
+			if prevCost, exists := distances[prevState]; !exists || newCost < prevCost {
+				distances[prevState] = newCost
+				heap.Push(pq, &QueueItem{prevState, newCost})
+			}
 		}
-		rightDir := (cur.dir + 1) % 4
-		prevState = Point{cur.x, cur.y, rightDir}
-		if cost, exists := dist[prevState]; !exists || d+1000 < cost {
-			dist[prevState] = d + 1000
-			heap.Push(&pq, &State{prevState, d + 1000})
-		}
+
 	}
-	return dist
+	return distances
 }
 
-func solvePart2(grid [][]rune, start Point) int {
+func countOptimalTiles(grid [][]rune, start State) int {
 	var endX, endY int
 	for i, row := range grid {
 		for j, cell := range row {
 			if cell == 'E' {
 				endX, endY = i, j
-				break
+				goto found
 			}
 		}
 	}
+found:
+
 	distFromStart, minCost := dijkstraForward(grid, start)
 	distToEnd := dijkstraBackward(grid, endX, endY)
 
 	optimalTiles := make(map[[2]int]bool)
-
 	for state, costFromStart := range distFromStart {
 		if costToEnd, exists := distToEnd[state]; exists {
 			if costFromStart+costToEnd == minCost {
@@ -185,4 +193,13 @@ func solvePart2(grid [][]rune, start Point) int {
 		}
 	}
 	return len(optimalTiles)
+}
+
+func isValid(grid [][]rune, x, y int) bool {
+	return x >= 0 && x < len(grid) && y >= 0 && y < len(grid[0]) && grid[x][y] != '#'
+}
+
+func directionName(dir int) string {
+	names := []string{"North", "East", "South", "West"}
+	return names[dir]
 }
