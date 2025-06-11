@@ -130,4 +130,15 @@
 - Time Complexity: O(V log V) where V = cells × 4 directions
 - Implementation Notes: Forward dijkstra finds minimum cost backward dijkstra from end calculates reverse distances, optimal tiles identified where forward_cost + backward_cost = minimum_total
 
+### Day 17: Chronospatial Computer
+
+(I will be honest here. I couldn't solve the part 2 on my own. Watched tons of
+video and claude to solved this part 2)
+
+- Algorithm: 3-bit Computer Simulation + Reverse Engineering (Backtracking)
+- Data Structures: Virtual Machine State (registers A,B,C + instruction pointer), Candidate Queue
+- Key Learning: Quine generation through base-8 digit reconstruction, working backwards from target output
+- Time Complexity: O(8^n) where n = program length, but pruned heavily by early validation
+- Implementation Notes: Forward simulation executes 8 opcodes with combo/literal operands, reverse search builds register A by testing 3-bit chunks from program end to start, each iteration shifts left 3 bits and tests 8 possibilities (0-7)
+
 ---
