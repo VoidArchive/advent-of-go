@@ -141,4 +141,14 @@ video and claude to solved this part 2)
 - Time Complexity: O(8^n) where n = program length, but pruned heavily by early validation
 - Implementation Notes: Forward simulation executes 8 opcodes with combo/literal operands, reverse search builds register A by testing 3-bit chunks from program end to start, each iteration shifts left 3 bits and tests 8 possibilities (0-7)
 
+### Day 18: RAM Run
+
+I solved this one step by step - Part 1 was straightforward pathfinding, but Part 2 required optimizing the search strategy to avoid checking every single byte position.
+
+- Algorithm: BFS Pathfinding + Binary Search Optimization
+Data Structures: Grid representation via corruption map (hash set), BFS queue with state tracking
+- Key Learning: Binary search transforms O(n²) sequential checking into O(n log n), critical for large datasets where naive approaches timeout
+- Time Complexity: O(n log n × grid_size) where n = number of falling bytes, each binary search iteration runs BFS in O(grid_size)
+- Implementation Notes: BFS explores 4-directional movement with boundary/corruption checking, binary search bisects the byte sequence to find the exact transition point from "path exists" to "path blocked", corruption tracking uses hash map for O(1) lookup of blocked coordinates
+
 ---
