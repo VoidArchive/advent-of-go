@@ -22,6 +22,8 @@ var directionalKeypad = map[Point]rune{
 	{1, 0}: '<', {1, 1}: 'v', {1, 2}: '>',
 }
 
+var memo = make(map[string]int)
+
 func getPosition(keypad map[Point]rune, key rune) Point {
 	for pos, k := range keypad {
 		if k == key {
@@ -100,8 +102,6 @@ func isValidPath(keypad map[Point]rune, start Point, path string) bool {
 	}
 	return true
 }
-
-var memo = make(map[string]int)
 
 func findMinLength(sequence string, depth int) int {
 	if depth == 0 {

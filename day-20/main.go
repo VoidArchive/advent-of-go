@@ -35,9 +35,10 @@ func parseInput() ([][]rune, Point, Point) {
 		row := []rune(line)
 
 		for x, ch := range row {
-			if ch == 'S' {
+			switch ch {
+			case 'S':
 				start = Point{x, y}
-			} else if ch == 'E' {
+			case 'E':
 				end = Point{x, y}
 			}
 		}
