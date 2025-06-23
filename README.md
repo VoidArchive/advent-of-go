@@ -1,7 +1,9 @@
 # Advent of Code 2024 - Progress Report
 
+![Advent of Code 2024](aoc2024.png)
+
 - **Language:** Go 1.24
-- **Days Completed:** 1-15
+- **Days Completed:** 1-25
 
 ## Algorithm Implementations & Learning
 
@@ -150,5 +152,61 @@ Data Structures: Grid representation via corruption map (hash set), BFS queue wi
 - Key Learning: Binary search transforms O(n²) sequential checking into O(n log n), critical for large datasets where naive approaches timeout
 - Time Complexity: O(n log n × grid_size) where n = number of falling bytes, each binary search iteration runs BFS in O(grid_size)
 - Implementation Notes: BFS explores 4-directional movement with boundary/corruption checking, binary search bisects the byte sequence to find the exact transition point from "path exists" to "path blocked", corruption tracking uses hash map for O(1) lookup of blocked coordinates
+
+### Day 19: Linen Layout
+
+- Algorithm: Dynamic Programming + Memoization (Pattern Matching)
+- Data Structures: Recursive cache (`map[string]int`), string slicing
+- Key Learning: Prefix matching with memoized recursion for counting all possible ways to construct target strings
+- Time Complexity: O(n*m*k) where n = design length, m = pattern count, k = average pattern length, with memoization
+- Implementation Notes: Uses `strings.HasPrefix()` for pattern matching, memoization prevents recomputation of subproblems, counts both existence and total ways
+
+### Day 20: Race Condition
+
+- Algorithm: BFS Distance Calculation + Manhattan Distance Cheating
+- Data Structures: Distance maps, coordinate pairs, BFS queue
+- Key Learning: Cheat detection through Manhattan distance constraints between any two points on the optimal path
+- Time Complexity: O(n*m + p²) where n,m = grid dimensions, p = path length
+- Implementation Notes: Pre-calculates distances from start to all reachable points, evaluates all pairs of path points within cheat distance limit, filters cheats by minimum time savings
+
+### Day 21: Keypad Conundrum
+
+- Algorithm: Multi-Level Pathfinding + Memoized Dynamic Programming
+- Data Structures: Keypad coordinate maps, BFS for shortest paths, nested memoization cache
+- Key Learning: Hierarchical robot control with exponential complexity reduction through memoization across depth levels
+- Time Complexity: O(k^d) without memoization vs O(k*d*s) with memoization, where k = keypad size, d = depth, s = sequence length
+- Implementation Notes: Separates numeric and directional keypads, finds all shortest paths between key pairs, uses depth-based memoization for recursive robot chain simulation
+
+### Day 22: Monkey Market
+
+- Algorithm: Pseudo-Random Number Generation + Sequence Pattern Matching
+- Data Structures: Maps for sequence tracking, arrays for price/change sequences
+- Key Learning: PRNG with specific operations (XOR mixing, modulo pruning), optimal sequence finding across multiple buyers
+- Time Complexity: O(n*m) where n = buyers, m = sequence length (2000)
+- Implementation Notes: Uses mix() and prune() operations for secret generation, tracks 4-element change sequences for maximum banana collection, first occurrence optimization prevents double-counting sequences per buyer
+
+### Day 23: LAN Party
+
+- Algorithm: Graph Theory - Triangle Detection + Maximum Clique (Bron-Kerbosch)
+- Data Structures: Adjacency list representation, set operations for clique detection
+- Key Learning: Bron-Kerbosch algorithm with pivoting for efficient maximum clique finding in undirected graphs
+- Time Complexity: O(n³) for triangle enumeration, O(3^(n/3)) for maximum clique with good pivoting
+- Implementation Notes: Part 1 uses brute force triangle detection with 't' prefix filtering, Part 2 implements Bron-Kerbosch with pivot selection to minimize branching factor
+
+### Day 24: Crossed Wires
+
+- Algorithm: Logic Circuit Simulation + Structural Analysis with Greedy Swap Detection
+- Data Structures: Gate representation, wire value maps, circuit verification functions
+- Key Learning: Binary adder verification through structural pattern matching and progressive improvement via beneficial swaps
+- Time Complexity: O(g) for simulation, O(g²*n) for swap detection where g = gates, n = swap rounds
+- Implementation Notes: Simulates boolean logic gates (AND, OR, XOR), verifies full-adder structure through recursive pattern validation, uses greedy hill-climbing to find beneficial wire swaps
+
+### Day 25: Code Chronicle
+
+- Algorithm: Pattern Recognition + Combinatorial Matching
+- Data Structures: Height arrays for lock/key representation, schematic parsing
+- Key Learning: Transform 2D lock/key schematics into 1D height profiles for efficient overlap detection
+- Time Complexity: O(n*m) where n = locks, m = keys
+- Implementation Notes: Distinguishes locks (top filled, bottom empty) from keys (top empty, bottom filled), converts schematics to column heights, validates non-overlapping constraint through height summation
 
 ---
