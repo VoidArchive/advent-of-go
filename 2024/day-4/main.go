@@ -1,31 +1,38 @@
 package main
 
+import (
+	"bufio"
+	"fmt"
+	"log"
+	"os"
+)
+
 func main() {
 	grid, err := readgrid("input.txt")
 	if err != nil {
-		log.fatal("reading grid: ", err)
+		log.Fatal("reading grid: ", err)
 	}
 
-	fmt.println("part 1:", countxmas(grid))
-	fmt.println("part 2:", countxmasx(grid))
+	fmt.Println("part 1:", countxmas(grid))
+	fmt.Println("part 2:", countxmasx(grid))
 }
 
 func readgrid(path string) ([]string, error) {
-	file, err := os.open(path)
+	file, err := os.Open(path)
 	if err != nil {
 		return nil, err
 	}
-	defer file.close()
+	defer file.Close()
 
 	grid := make([]string, 0)
-	scanner := bufio.newscanner(file)
+	scanner := bufio.NewScanner(file)
 
-	for scanner.scan() {
-		line := scanner.text()
+	for scanner.Scan() {
+		line := scanner.Text()
 		grid = append(grid, line)
 	}
 
-	return grid, scanner.err()
+	return grid, scanner.Err()
 }
 
 func inbounds(x, y, rows, cols int) bool {
