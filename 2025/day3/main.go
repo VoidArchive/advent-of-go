@@ -10,7 +10,7 @@ func maxJoltagePart1(bank string) int {
 	n := len(bank)
 	maxVal := 0
 
-	for i := 0; i < n; i++ {
+	for i := range n {
 		for j := i + 1; j < n; j++ {
 			val := int(bank[i]-'0')*10 + int(bank[j]-'0')
 			if val > maxVal {
